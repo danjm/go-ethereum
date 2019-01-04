@@ -25,6 +25,39 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
+// Run `go test -v -cpu 4 ./core/types -run TestWrongVRSTestVEqual39`
+
+func TestWrongVRSTestVEqual39(t *testing.T) {
+  // Test vectors come from http://vitalik.ca/files/eip155_testvec.txt
+  for i, test := range []struct {
+    txRlp, addr string
+  }{
+    {"f85f800182520894b94f5374fce5edbc8e2a8697c15331677e6ebf0b0a8027a098ff921201554726367d2be8c804a7ff89ccf285ebc57dff8ae4c44b9c19ac4aa01887321be575c8095f789dd4c743dfe42c1820f9231f98a962b210e3ac2452a3", "0x5719b5782daee86dbc0cacaba7697fd1b6ff77a6"},
+  } {
+    signer := NewEIP155Signer(big.NewInt(2))
+
+    var tx *Transaction
+    err := rlp.DecodeBytes(common.Hex2Bytes(test.txRlp), &tx)
+    if err != nil {
+      t.Errorf("%d: %v", i, err)
+      continue
+    }
+
+    from, err := Sender(signer, tx)
+    if err != nil {
+      t.Errorf("%d: %v", i, err)
+      continue
+    }
+
+    addr := common.HexToAddress(test.addr)
+    if from != addr {
+      t.Errorf("%d: expected %x got %x", i, addr, from)
+    }
+
+  }
+}
+
+
 func TestEIP155Signing(t *testing.T) {
 	key, _ := crypto.GenerateKey()
 	addr := crypto.PubkeyToAddress(key.PublicKey)
